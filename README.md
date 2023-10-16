@@ -1,10 +1,10 @@
-# Parallel Linear Search
+# Multi Process Linear Search
 
-Parallel Linear Search is a program designed to search for a string in a file using multiple processes. The primary process divides the file into segments, each of which is scanned by a child process. The parallelism increases the efficiency of the search, especially for large files.
+Multi Process Linear Search is a program designed to search for a string in a file using multiple processes. The primary process divides the file into segments, each of which is scanned by a child process. The parallelism increases the efficiency of the search, especially for large files.
 
 ## Table of Contents
 
-- [Parallel Linear Search](#parallel-linear-search)
+- [Multi Process Linear Search](#multi-process-linear-search)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Installation](#installation)
