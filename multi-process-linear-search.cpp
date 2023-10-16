@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <signal.h>
 
-// load all strings from the given file into a vector.
 std::vector<std::string> loadFileContents(const std::string& filename)
 {
     std::ifstream fileStream(filename);
@@ -22,18 +21,17 @@ std::vector<std::string> loadFileContents(const std::string& filename)
     return content;
 }
 
-// check if the key exists within the specified segment of lines.
-bool doesKeyExistInSegment(const std::vector<std::string>& lines, const std::string& key, size_t startIdx, size_t endIdx)
+int findKeyInSegment(const std::vector<std::string>& lines, const std::string& key, size_t startIdx, size_t endIdx)
 {
     for (size_t i = startIdx; i < endIdx; ++i)
     {
         if (lines[i] == key)
         {
-            return true;
+            return i;  // Return the exact line number
         }
     }
 
-    return false;
+    return -1;
 }
 
 void terminateAllChildren(const std::vector<pid_t>& children)
@@ -57,7 +55,34 @@ int main(int argc, char** argv)
     int totalProcesses = std::stoi(argv[3]);
 
     std::vector<std::string> lines = loadFileContents(filename);
+
+    if (lines.empty())
+    {
+        std::cerr << "The file is empty or there was an error reading it." << std::endl;
+        return 1;
+    }
+
+    if (totalProcesses <= 0)
+    {
+        std::cerr << "The number of processes must be greater than zero." << std::endl;
+        return 1;
+    }
+
+    if (lines.size() < totalProcesses)
+    {
+        std::cerr << "Warning: Number of lines in the file is less than the number of processes. Adjusting processes count." << std::endl;
+        totalProcesses = lines.size();
+    }
+
     size_t segmentLength = lines.size() / totalProcesses;
+
+    if (segmentLength == 0)
+    {
+        std::cerr << "Segment length is zero, which is not expected. Exiting." << std::endl;
+        return 1;
+    }
+
+    std::cout << "Total lines in file: " << lines.size() << ", Segment length: " << segmentLength << std::endl;
 
     std::vector<pid_t> childPids;
 
@@ -70,8 +95,16 @@ int main(int argc, char** argv)
             size_t startIdx = i * segmentLength;
             size_t endIdx = (i == totalProcesses - 1) ? lines.size() : startIdx + segmentLength;
 
-            bool found = doesKeyExistInSegment(lines, searchKey, startIdx, endIdx);
-            exit(found ? 0 : 1);
+            int localFoundLine = findKeyInSegment(lines, searchKey, startIdx, endIdx);
+
+            if (localFoundLine != -1)
+            {
+                exit(0);  // found
+            }
+            else
+            {
+                exit(1);  // not found
+            }
         }
         else if (childPid < 0)  // Forking failed
         {
@@ -85,23 +118,27 @@ int main(int argc, char** argv)
     }
 
     int exitStatus;
-    bool isKeyFound = false;
+    bool found = false;
 
-    for (int i = 0; i < totalProcesses && !isKeyFound; ++i)
+    for (int i = 0; i < totalProcesses && !found; ++i)
     {
-        wait(&exitStatus);
+        pid_t childPid = wait(&exitStatus);
 
-        if (WEXITSTATUS(exitStatus) == 0)
+        if (WEXITSTATUS(exitStatus) == 0)  // found
         {
-            isKeyFound = true;
+            found = true;
             terminateAllChildren(childPids);
         }
     }
 
-    if (!isKeyFound)
+    if (found)
+    {
+        std::cerr << "Key was found! Woohoo!! :)" << std::endl;
+        return 0;
+    }
+    else
     {
         std::cout << "No string found" << std::endl;
+        return -1;
     }
-
-    return 0;
 }
