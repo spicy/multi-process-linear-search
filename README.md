@@ -20,7 +20,7 @@ Multi Process Linear Search is a program designed to search for a string in a fi
 
 1. Clone the repository:
 
-git clone https://github.com/spicy/MultiProcessLinearSearch.git
+git clone https://github.com/spicy/multi-process-linear-search.git
 
     Navigate to the directory:
 
